@@ -174,12 +174,8 @@ font-size:15px;
   }
   .music-btn{ 
   position:fixed;
-top:40px;
-left:925px;
-right: 925px; 
-
-  /* 가운데 청첩장 영역의 오른쪽 끝을 기준으로 고정 */
-  right:max(14px, calc((100vw - 540px) / 2 + 14px));
+  top:40px;
+  right:max(14px, calc((100vw - 430px) / 2 + 14px));
 
   width:36px; 
   height:36px; 
@@ -202,6 +198,7 @@ right: 925px;
   cursor:pointer; 
   z-index:9999; 
 }
+
 </style>
 </head>
 <body>
@@ -936,6 +933,109 @@ background-repeat:no-repeat;
     <span class="foot-heart">— thank you —</span>
     <p class="foot-name">WOOJIN &amp; MINA · 2026. 12. 05</p>
   </section>
+  
+  <div style="
+  width:100%;
+  padding:60px 0 70px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:28px;
+  background:#fff;
+">
+
+  <!-- KAKAO TALK -->
+  <button id="kakaoShareBtn" type="button" style="
+    width:205px;
+    justify-content:center;
+    padding:0;
+    border:0;
+    background:none;
+    display:flex;
+    align-items:center;
+    font-family:Pretendard, sans-serif;
+    font-size:15px;
+    font-weight:400;
+    color:#111;
+    cursor:pointer;
+  ">
+
+    <span style="
+      width:28px;
+      height:28px;
+      margin-right:22px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    ">
+      <svg width="25" height="25" viewBox="0 0 32 32">
+        <path
+          fill="#111"
+          d="M16 4C8.82 4 3 8.63 3 14.35c0 3.68 2.42 6.91 6.07 8.75L7.65 28l5.6-3.18c.89.17 1.81.25 2.75.25 7.18 0 13-4.63 13-10.35S23.18 4 16 4z"
+        />
+      </svg>
+    </span>
+
+    <span>Share Kakao Talk</span>
+
+  </button>
+
+
+  <!-- COPY LINK -->
+  <button id="copyLinkBtn" type="button" style="
+    width:205px;
+    justify-content:center;
+    padding:0;
+    border:0;
+    background:none;
+    display:flex;
+    align-items:center;
+    font-family:Pretendard, sans-serif;
+    font-size:15px;
+    font-weight:400;
+    color:#111;
+    cursor:pointer;
+  ">
+
+    <span style="
+      width:28px;
+      height:28px;
+      margin-right:22px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    ">
+      <svg width="23" height="23" viewBox="0 0 24 24">
+        <path
+          d="M10.5 13.5L13.5 10.5"
+          fill="none"
+          stroke="#111"
+          stroke-width="1.6"
+          stroke-linecap="round"
+        />
+        <path
+          d="M8.2 15.8L6.4 17.6a3.4 3.4 0 01-4.8-4.8l3.2-3.2a3.4 3.4 0 014.8 0"
+          fill="none"
+          stroke="#111"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M15.8 8.2l1.8-1.8a3.4 3.4 0 014.8 4.8l-3.2 3.2a3.4 3.4 0 01-4.8 0"
+          fill="none"
+          stroke="#111"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </span>
+
+    <span>Copy Link</span>
+  </button>
+
+</div>
 
 </div><!-- /.frame -->
 
@@ -1108,7 +1208,62 @@ window.addEventListener('load', () => {
       }, 1400);
     });
   });
+// 청첩장 링크 복사
+const copyLinkBtn = document.getElementById('copyLinkBtn');
 
+copyLinkBtn.addEventListener('click', async () => {
+  const url = window.location.href;
+
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch (e) {
+    const textarea = document.createElement('textarea');
+    textarea.value = url;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  }
+
+  const text = copyLinkBtn.querySelector('span:last-child');
+  text.textContent = 'Copied!';
+
+  setTimeout(() => {
+    text.textContent = 'Copy Link';
+  }, 1500);
+});
 </script>
+
+<!-- 카카오 SDK -->
+<script src="https://ansdjclwm-ctrl.github.io"></script>
+
+<script>
+  Kakao.init('6d74bb27ab1d36655bf2cf4858a5140e');
+  console.log(Kakao.isInitialized());
+  document.getElementById('kakaoShareBtn').addEventListener('click', function () {
+  Kakao.Share.sendDefault({
+    objectType: 'feed',
+    content: {
+      title: '우진과 민아의 결혼식에 초대합니다',
+      description: '2026년 12월 5일',
+      imageUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/image/1.jpg',
+      link: {
+        mobileWebUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/',
+        webUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/'
+      }
+    },
+    buttons: [
+      {
+        title: '청첩장 보기',
+        link: {
+          mobileWebUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/',
+          webUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/'
+        }
+      }
+    ]
+  });
+});
+</script>
+
 </body>
 </html>
