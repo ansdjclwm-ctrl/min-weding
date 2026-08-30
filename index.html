@@ -19,7 +19,7 @@
 
 @font-face {
   font-family: 'relationship of mélodrame';
-  src: url('./font/Relationship of mélodrame.ttf') format('truetype');
+  src: url('./font/relationship.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -862,6 +862,11 @@ background-repeat:no-repeat;
 </div><!-- /.frame -->
 
 <script>
+  history.scrollRestoration = 'manual';
+
+window.addEventListener('load', () => {
+  window.scrollTo(0, 0);
+});
   // 1) 흑백 사진만 먼저 보여주고, 잠시 후 문구가 부드럽게 페이드인
   window.addEventListener('load', () => {
     setTimeout(() => {
