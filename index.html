@@ -174,8 +174,6 @@ font-size:15px;
   }
   .music-btn{ 
   position:fixed;
-  top:30px;
-  right:max(30px, calc((100vw - 430px) / 2 + 30px));
 
   width:36px; 
   height:36px; 
@@ -1232,6 +1230,21 @@ copyLinkBtn.addEventListener('click', async () => {
     text.textContent = 'Copy Link';
   }, 1500);
 });
+// 음악 버튼 위치 맞추기
+function setMusicButtonPosition() {
+  const hero = document.querySelector('.hero');
+  const btn = document.getElementById('musicBtn');
+
+  if (!hero || !btn) return;
+
+  const rect = hero.getBoundingClientRect();
+
+  btn.style.top = (rect.top + 16) + 'px';
+  btn.style.left = (rect.right - btn.offsetWidth - 16) + 'px';
+}
+
+setMusicButtonPosition();
+window.addEventListener('resize', setMusicButtonPosition);
 </script>
 
 <!-- 카카오 SDK -->
