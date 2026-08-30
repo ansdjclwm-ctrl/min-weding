@@ -949,7 +949,8 @@ window.addEventListener('load', () => {
 
     // 시작할 때 실제 첫 번째 슬라이드 위치로 이동해서, 왼쪽에 마지막 사진이 살짝 보이게 합니다.
     track.style.scrollBehavior = 'auto';
-    slides[1].scrollIntoView({ inline: 'center', block: 'nearest' });
+    track.scrollLeft = slides[1].offsetLeft
+  - (track.clientWidth - slides[1].clientWidth) / 2;
     requestAnimationFrame(() => { track.style.scrollBehavior = ''; });
 
     const io = new IntersectionObserver((entries) => {
@@ -961,7 +962,8 @@ window.addEventListener('load', () => {
             jumping = true;
             setTimeout(() => {
               track.style.scrollBehavior = 'auto';
-              slides[N].scrollIntoView({ inline: 'center', block: 'nearest' });
+              track.scrollLeft = slides[N].offsetLeft
+  - (track.clientWidth - slides[N].clientWidth) / 2;
               requestAnimationFrame(() => {
                 track.style.scrollBehavior = '';
                 jumping = false;
