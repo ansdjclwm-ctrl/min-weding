@@ -535,7 +535,33 @@ font-size:15px;
     color:#4b453d;
     white-space:pre-wrap;
   }
+.congrats-pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:14px;
+  margin-top:22px;
+  font-family:'Pretendard', sans-serif;
+}
 
+.congrats-pagination button{
+  border:0;
+  background:none;
+  padding:4px 2px;
+  font-size:12px;
+  color:#aaa;
+  cursor:pointer;
+}
+
+.congrats-pagination button.active{
+  color:#4b453d;
+  font-weight:700;
+}
+
+.congrats-pagination button:disabled{
+  opacity:0.25;
+  cursor:default;
+}
   /* ===================== LOCATION ===================== */
   .location{text-align:center;}
   .venue{font-size:16px; font-weight:800; margin-bottom:6px;}
@@ -815,6 +841,7 @@ background-repeat:no-repeat;
       <button id="congratsSubmit" class="congrats-submit">메시지 남기기</button>
     </div>
     <div class="congrats-list" id="congratsList"></div>
+    <div class="congrats-pagination" id="congratsPagination"></div>
   </section>
 
   <section class="location">
@@ -1504,20 +1531,91 @@ if (musicBtn && hero) {
     return item;
   }
 
-  const messagesQuery = query(
-    collection(db, 'guestbook'),
-    orderBy('createdAt', 'desc')
-  );
+  const pagination = document.getElementById('congratsPagination');
 
-  onSnapshot(messagesQuery, (snapshot) => {
-    list.innerHTML = '';
+const PAGE_SIZE = 5;
+let allMessages = [];
+let currentPage = 1;
 
-    snapshot.forEach((doc) => {
-      list.appendChild(makeMessage(doc.data()));
-    });
-  }, (error) => {
-    console.error('축하 메시지 불러오기 실패:', error);
+function renderMessages() {
+  list.innerHTML = '';
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageMessages = allMessages.slice(start, end);
+
+  pageMessages.forEach((data) => {
+    list.appendChild(makeMessage(data));
   });
+
+  renderPagination();
+}
+
+function renderPagination() {
+  pagination.innerHTML = '';
+
+  const totalPages = Math.ceil(allMessages.length / PAGE_SIZE);
+
+  if (totalPages <= 1) return;
+
+  const prev = document.createElement('button');
+  prev.textContent = '‹';
+  prev.disabled = currentPage === 1;
+  prev.addEventListener('click', () => {
+    currentPage--;
+    renderMessages();
+  });
+  pagination.appendChild(prev);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const button = document.createElement('button');
+    button.textContent = i;
+
+    if (i === currentPage) {
+      button.classList.add('active');
+    }
+
+    button.addEventListener('click', () => {
+      currentPage = i;
+      renderMessages();
+    });
+
+    pagination.appendChild(button);
+  }
+
+  const next = document.createElement('button');
+  next.textContent = '›';
+  next.disabled = currentPage === totalPages;
+  next.addEventListener('click', () => {
+    currentPage++;
+    renderMessages();
+  });
+  pagination.appendChild(next);
+}
+
+const messagesQuery = query(
+  collection(db, 'guestbook'),
+  orderBy('createdAt', 'desc')
+);
+
+onSnapshot(messagesQuery, (snapshot) => {
+  allMessages = [];
+
+  snapshot.forEach((doc) => {
+    allMessages.push(doc.data());
+  });
+
+  const totalPages = Math.max(1, Math.ceil(allMessages.length / PAGE_SIZE));
+
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
+
+  renderMessages();
+
+}, (error) => {
+  console.error('축하 메시지 불러오기 실패:', error);
+});
 
   submitBtn.addEventListener('click', async () => {
     const name = nameInput.value.trim() || '익명';
