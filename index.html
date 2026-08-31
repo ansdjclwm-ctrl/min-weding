@@ -174,7 +174,6 @@ font-size:15px;
   }
   .music-btn{ 
   position:fixed;
-  -webkit-transform:translateZ(0);
 
   width:36px; 
   height:36px; 
@@ -1236,18 +1235,29 @@ const musicBtn = document.getElementById('musicBtn');
 const hero = document.querySelector('.hero');
 
 if (musicBtn && hero) {
-  // 레이아웃에는 영향 없이 버튼만 body 직속으로 이동
+  // 버튼만 body 직속으로 이동
   document.body.appendChild(musicBtn);
 
   function setMusicButtonPosition() {
     const heroRect = hero.getBoundingClientRect();
+    const isDesktop = window.innerWidth > 460;
 
     musicBtn.style.position = 'fixed';
-    musicBtn.style.top = '16px';
-    musicBtn.style.left =
-      Math.min(window.innerWidth, heroRect.right) -
-      musicBtn.offsetWidth -
-      16 + 'px';
+    if (isDesktop) {
+  musicBtn.style.top = (heroRect.top + 16) + 'px';
+} else {
+  musicBtn.style.top = '16px';
+}
+
+    if (isDesktop) {
+      // PC에서는 사진 오른쪽에서 28px 안쪽
+      musicBtn.style.left =
+        (heroRect.right - musicBtn.offsetWidth - 28) + 'px';
+    } else {
+      // 모바일은 지금 잘 되는 위치 그대로
+      musicBtn.style.left =
+        (heroRect.right - musicBtn.offsetWidth - 16) + 'px';
+    }
 
     musicBtn.style.zIndex = '2147483647';
   }
@@ -1255,13 +1265,16 @@ if (musicBtn && hero) {
   setMusicButtonPosition();
 
   window.addEventListener('resize', () => {
-    // 세로 스크롤에 따른 높이 변화는 무시하고 가로 위치만 재계산
     const heroRect = hero.getBoundingClientRect();
+    const isDesktop = window.innerWidth > 460;
 
-    musicBtn.style.left =
-      Math.min(window.innerWidth, heroRect.right) -
-      musicBtn.offsetWidth -
-      16 + 'px';
+    if (isDesktop) {
+      musicBtn.style.left =
+        (heroRect.right - musicBtn.offsetWidth - 28) + 'px';
+    } else {
+      musicBtn.style.left =
+        (heroRect.right - musicBtn.offsetWidth - 16) + 'px';
+    }
   });
 }
 </script>
