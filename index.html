@@ -1118,6 +1118,10 @@ window.addEventListener('load', () => {
   track.appendChild(firstClone);
 
   const slides = Array.from(track.children);
+  slides.forEach(slide => {
+  const img = slide.querySelector('img');
+  if (img) img.draggable = false;
+});
 
   let index = 1;
   let startX = 0;
