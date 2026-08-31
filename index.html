@@ -305,7 +305,7 @@ font-size:15px;
     display:flex;
     gap:10px;
     overflow-x:auto;
-    scroll-snap-type:x proximity;
+    scroll-snap-type:x mandatory;
     scroll-behavior:auto;
     padding:0 20px 20px;
     -webkit-overflow-scrolling:touch;
@@ -1155,7 +1155,7 @@ function updateGallery() {
   if (closestIndex === 0) {
     track.style.scrollSnapType = 'none';
     track.style.scrollBehavior = 'auto';
-    track.scrollLeft = getCenterPosition(slides[N]);
+    track.scrollLeft += slides[N].offsetLeft - slides[0].offsetLeft;
 
     requestAnimationFrame(() => {
       track.style.scrollSnapType = '';
@@ -1168,7 +1168,7 @@ function updateGallery() {
   else if (closestIndex === N + 1) {
     track.style.scrollSnapType = 'none';
     track.style.scrollBehavior = 'auto';
-    track.scrollLeft = getCenterPosition(slides[1]);
+    track.scrollLeft += slides[1].offsetLeft - slides[N + 1].offsetLeft;
 
     requestAnimationFrame(() => {
       track.style.scrollSnapType = '';
