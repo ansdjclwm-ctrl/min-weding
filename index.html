@@ -1151,7 +1151,8 @@ window.addEventListener('load', () => {
             jumping = true;
             setTimeout(() => {
               track.style.scrollBehavior = 'auto';
-              slides[1].scrollIntoView({ inline: 'center', block: 'nearest' });
+              track.scrollLeft = slides[1].offsetLeft
+  - (track.clientWidth - slides[1].clientWidth) / 2;
               requestAnimationFrame(() => {
                 track.style.scrollBehavior = '';
                 jumping = false;
@@ -1290,7 +1291,7 @@ if (musicBtn && hero) {
     objectType: 'feed',
     content: {
       title: '우진 그리고 민아 결혼합니다',
-      description: '2026년 12월 5일 토요일 오후 12시 30분',
+      description: '2026년 12월 5일(토) 오후 12시 30분',
       imageUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/image/1.jpg',
       link: {
         mobileWebUrl: 'https://ansdjclwm-ctrl.github.io/min-weding/',
