@@ -302,20 +302,17 @@ font-size:15px;
   .gallery{padding-left:0; padding-right:0;}
   .gallery .label{padding:0 30px;}
   .gallery-track{
-    display:flex;
-    gap:10px;
-    overflow-x:auto;
-    scroll-snap-type:x mandatory;
-    scroll-behavior:auto;
-    padding:0 20px 20px;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
+  display:flex;
+  gap:10px;
+  overflow:visible;
+  padding:0 20px 20px;
+  will-change:transform;
+  touch-action:pan-y;
+}
   .gallery-track::-webkit-scrollbar{display:none;}
   .slide{
     flex:0 0 86%;
     aspect-ratio:3/4;
-    scroll-snap-align:center;
     border-radius:2px;
     overflow:hidden;
     background:#f1ede4;
@@ -1096,105 +1093,159 @@ window.addEventListener('load', () => {
 
   // 2) 갤러리 - 좌우로 슬라이드, 양쪽으로 계속 반복(루프), 처음부터 왼쪽에도 사진이 살짝 보입니다
   (function initGallery(){
-    const track = document.getElementById('galleryTrack');
-    const dotsWrap = document.getElementById('galleryDots');
-    const realSlides = Array.from(track.children);
+  const track = document.getElementById('galleryTrack');
+  const dotsWrap = document.getElementById('galleryDots');
+  const realSlides = Array.from(track.children);
+  const N = realSlides.length;
 
-    // 무한 루프를 위해 마지막 슬라이드를 맨 앞에, 첫 슬라이드를 맨 뒤에 복제해둡니다.
-    const lastClone = realSlides[realSlides.length - 1].cloneNode(true);
-    lastClone.setAttribute('aria-hidden', 'true');
-    lastClone.classList.add('slide-clone');
-    track.insertBefore(lastClone, track.firstChild);
-
-    const firstClone = realSlides[0].cloneNode(true);
-    firstClone.setAttribute('aria-hidden', 'true');
-    firstClone.classList.add('slide-clone');
-    track.appendChild(firstClone);
-
-    const slides = Array.from(track.children); // [lastClone, real...(N), firstClone]
-    const N = realSlides.length;
-
-    realSlides.forEach((_, i) => {
-      const dot = document.createElement('span');
-      if (i === 0) dot.classList.add('active');
-      dotsWrap.appendChild(dot);
-    });
-    const dots = Array.from(dotsWrap.children);
-
-    let jumping = false;
-
-    // 시작할 때 실제 첫 번째 슬라이드 위치로 이동해서, 왼쪽에 마지막 사진이 살짝 보이게 합니다.
-    track.style.scrollBehavior = 'auto';
-    track.scrollLeft = slides[1].offsetLeft
-  - (track.clientWidth - slides[1].clientWidth) / 2;
-    requestAnimationFrame(() => { track.style.scrollBehavior = ''; });
-
-    let scrollTimer;
-
-function getCenterPosition(slide) {
-  return slide.offsetLeft
-    - (track.clientWidth - slide.clientWidth) / 2;
-}
-
-function updateGallery() {
-  const trackCenter = track.scrollLeft + track.clientWidth / 2;
-
-  let closestIndex = 0;
-  let closestDistance = Infinity;
-
-  slides.forEach((slide, index) => {
-    const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
-    const distance = Math.abs(trackCenter - slideCenter);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = index;
-    }
+  // 점 만들기
+  realSlides.forEach((_, i) => {
+    const dot = document.createElement('span');
+    if (i === 0) dot.classList.add('active');
+    dotsWrap.appendChild(dot);
   });
 
-  if (closestIndex === 0) {
-    track.style.scrollSnapType = 'none';
-    track.style.scrollBehavior = 'auto';
-    track.scrollLeft += slides[N].offsetLeft - slides[0].offsetLeft;
+  const dots = Array.from(dotsWrap.children);
 
-    requestAnimationFrame(() => {
-      track.style.scrollSnapType = '';
-      track.style.scrollBehavior = 'auto';
-    });
+  // 무한루프용 복제본
+  const lastClone = realSlides[N - 1].cloneNode(true);
+  const firstClone = realSlides[0].cloneNode(true);
 
-    closestIndex = N;
+  lastClone.setAttribute('aria-hidden', 'true');
+  firstClone.setAttribute('aria-hidden', 'true');
+
+  track.insertBefore(lastClone, track.firstChild);
+  track.appendChild(firstClone);
+
+  const slides = Array.from(track.children);
+
+  let index = 1;
+  let startX = 0;
+  let moveX = 0;
+  let dragging = false;
+  let animating = false;
+
+  function slideWidth() {
+    const gap = parseFloat(getComputedStyle(track).gap) || 0;
+    return slides[0].getBoundingClientRect().width + gap;
   }
 
-  else if (closestIndex === N + 1) {
-    track.style.scrollSnapType = 'none';
-    track.style.scrollBehavior = 'auto';
-    track.scrollLeft += slides[1].offsetLeft - slides[N + 1].offsetLeft;
-
-    requestAnimationFrame(() => {
-      track.style.scrollSnapType = '';
-      track.style.scrollBehavior = 'auto';
-    });
-
-    closestIndex = 1;
-  }
-
-  const realIndex = closestIndex - 1;
-
-  dots.forEach(d => d.classList.remove('active'));
-
-  if (dots[realIndex]) {
-    dots[realIndex].classList.add('active');
-  }
+  function centerOffset() {
+  return (track.parentElement.clientWidth - slides[0].getBoundingClientRect().width) / 2 - 20;
 }
 
-track.addEventListener('scroll', () => {
-  clearTimeout(scrollTimer);
+  function position(animate = true, extra = 0) {
+    const x = centerOffset() - index * slideWidth() + extra;
 
-  scrollTimer = setTimeout(() => {
-    updateGallery();
-  }, 120);
-}, { passive: true });
-  })();
+    track.style.transition = animate
+      ? 'transform 0.38s cubic-bezier(.22,.61,.36,1)'
+      : 'none';
+
+    track.style.transform = `translate3d(${x}px,0,0)`;
+  }
+
+  function updateDots() {
+    let realIndex = index - 1;
+
+    if (realIndex < 0) realIndex = N - 1;
+    if (realIndex >= N) realIndex = 0;
+
+    dots.forEach(dot => dot.classList.remove('active'));
+
+    if (dots[realIndex]) {
+      dots[realIndex].classList.add('active');
+    }
+  }
+
+  // 처음 1번 사진 위치
+  requestAnimationFrame(() => {
+    position(false);
+  });
+
+  function startDrag(clientX) {
+    if (animating) return;
+
+    dragging = true;
+    startX = clientX;
+    moveX = 0;
+
+    track.style.transition = 'none';
+  }
+
+  function drag(clientX) {
+    if (!dragging) return;
+
+    moveX = clientX - startX;
+    position(false, moveX);
+  }
+
+  function endDrag() {
+    if (!dragging) return;
+
+    dragging = false;
+
+    const threshold = Math.min(70, slideWidth() * 0.18);
+
+    if (moveX < -threshold) {
+      index++;
+    } else if (moveX > threshold) {
+      index--;
+    }
+
+    moveX = 0;
+    animating = true;
+
+    position(true);
+    updateDots();
+  }
+
+  // 모바일 터치
+  track.addEventListener('touchstart', e => {
+    startDrag(e.touches[0].clientX);
+  }, { passive: true });
+
+  track.addEventListener('touchmove', e => {
+    drag(e.touches[0].clientX);
+  }, { passive: true });
+
+  track.addEventListener('touchend', () => {
+    endDrag();
+  });
+
+  // PC 마우스
+  track.addEventListener('mousedown', e => {
+    startDrag(e.clientX);
+  });
+
+  window.addEventListener('mousemove', e => {
+    drag(e.clientX);
+  });
+
+  window.addEventListener('mouseup', () => {
+    endDrag();
+  });
+
+  // 복제본까지 자연스럽게 이동한 뒤
+  // 애니메이션이 끝난 순간 같은 모양의 원본으로 교체
+  track.addEventListener('transitionend', () => {
+    if (index === 0) {
+      index = N;
+      position(false);
+    }
+
+    else if (index === N + 1) {
+      index = 1;
+      position(false);
+    }
+
+    animating = false;
+    updateDots();
+  });
+
+  window.addEventListener('resize', () => {
+    position(false);
+  });
+})();
 
   // 3) 계좌 아코디언 - 눌렀을 때 아래로 부드럽게 펼쳐짐
   function setupAccordion(btnId, bodyId){
