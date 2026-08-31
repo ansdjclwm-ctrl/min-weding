@@ -1101,29 +1101,69 @@ window.addEventListener('load', () => {
   // 점 만들기
   realSlides.forEach((_, i) => {
     const dot = document.createElement('span');
-    if (i === 0) dot.classList.add('active');
+
+    if (i === 0) {
+      dot.classList.add('active');
+    }
+
     dotsWrap.appendChild(dot);
   });
 
   const dots = Array.from(dotsWrap.children);
 
+  // =========================
   // 무한루프용 복제본
+  // 앞쪽 : 16번, 17번
+  // 뒤쪽 : 1번, 2번
+  // =========================
+  const secondLastClone = realSlides[N - 2].cloneNode(true);
   const lastClone = realSlides[N - 1].cloneNode(true);
+
   const firstClone = realSlides[0].cloneNode(true);
+  const secondClone = realSlides[1].cloneNode(true);
 
-  lastClone.setAttribute('aria-hidden', 'true');
-  firstClone.setAttribute('aria-hidden', 'true');
+  [
+    secondLastClone,
+    lastClone,
+    firstClone,
+    secondClone
+  ].forEach(clone => {
+    clone.setAttribute('aria-hidden', 'true');
+  });
 
-  track.insertBefore(lastClone, track.firstChild);
+  // 앞쪽
+  track.insertBefore(secondLastClone, realSlides[0]);
+  track.insertBefore(lastClone, realSlides[0]);
+
+  // 뒤쪽
   track.appendChild(firstClone);
+  track.appendChild(secondClone);
 
   const slides = Array.from(track.children);
-  slides.forEach(slide => {
-  const img = slide.querySelector('img');
-  if (img) img.draggable = false;
-});
 
-  let index = 1;
+  // PC에서 사진 자체가 끌리는 것 방지
+  slides.forEach(slide => {
+    const img = slide.querySelector('img');
+
+    if (img) {
+      img.draggable = false;
+    }
+  });
+
+  /*
+    배열 구조
+
+    0       = 16번 복제
+    1       = 17번 복제
+    2       = 실제 1번
+    3       = 실제 2번
+    ...
+    N + 1   = 실제 17번
+    N + 2   = 1번 복제
+    N + 3   = 2번 복제
+  */
+
+  let index = 2;
   let startX = 0;
   let moveX = 0;
   let dragging = false;
@@ -1131,30 +1171,39 @@ window.addEventListener('load', () => {
 
   function slideWidth() {
     const gap = parseFloat(getComputedStyle(track).gap) || 0;
+
     return slides[0].getBoundingClientRect().width + gap;
   }
 
   function centerOffset() {
-  return (track.parentElement.clientWidth - slides[0].getBoundingClientRect().width) / 2 - 20;
-}
+    return (
+      track.parentElement.clientWidth -
+      slides[0].getBoundingClientRect().width
+    ) / 2 - 20;
+  }
 
   function position(animate = true, extra = 0) {
-    const x = centerOffset() - index * slideWidth() + extra;
+    const x =
+      centerOffset() -
+      index * slideWidth() +
+      extra;
 
     track.style.transition = animate
       ? 'transform 0.38s cubic-bezier(.22,.61,.36,1)'
       : 'none';
 
-    track.style.transform = `translate3d(${x}px,0,0)`;
+    track.style.transform =
+      `translate3d(${x}px,0,0)`;
   }
 
   function updateDots() {
-    let realIndex = index - 1;
+    let realIndex = index - 2;
 
-    if (realIndex < 0) realIndex = N - 1;
-    if (realIndex >= N) realIndex = 0;
+    realIndex = ((realIndex % N) + N) % N;
 
-    dots.forEach(dot => dot.classList.remove('active'));
+    dots.forEach(dot => {
+      dot.classList.remove('active');
+    });
 
     if (dots[realIndex]) {
       dots[realIndex].classList.add('active');
@@ -1167,6 +1216,8 @@ window.addEventListener('load', () => {
   });
 
   function startDrag(clientX) {
+    // 사진이 자리로 이동 중이면
+    // 다음 드래그가 끼어들지 못하게 함
     if (animating) return;
 
     dragging = true;
@@ -1180,6 +1231,7 @@ window.addEventListener('load', () => {
     if (!dragging) return;
 
     moveX = clientX - startX;
+
     position(false, moveX);
   }
 
@@ -1188,35 +1240,66 @@ window.addEventListener('load', () => {
 
     dragging = false;
 
-    const threshold = Math.min(70, slideWidth() * 0.18);
+    const threshold =
+      Math.min(70, slideWidth() * 0.18);
+
+    const didMove = Math.abs(moveX) > 1;
 
     if (moveX < -threshold) {
       index++;
-    } else if (moveX > threshold) {
+    }
+
+    else if (moveX > threshold) {
       index--;
     }
 
     moveX = 0;
+
+    // 그냥 클릭만 한 경우에는
+    // animating 상태로 잠기지 않도록 처리
+    if (!didMove) {
+      animating = false;
+      position(false);
+      updateDots();
+      return;
+    }
+
     animating = true;
 
     position(true);
     updateDots();
   }
 
+  // =========================
   // 모바일 터치
-  track.addEventListener('touchstart', e => {
-    startDrag(e.touches[0].clientX);
-  }, { passive: true });
+  // =========================
+  track.addEventListener(
+    'touchstart',
+    e => {
+      startDrag(e.touches[0].clientX);
+    },
+    { passive: true }
+  );
 
-  track.addEventListener('touchmove', e => {
-    drag(e.touches[0].clientX);
-  }, { passive: true });
+  track.addEventListener(
+    'touchmove',
+    e => {
+      drag(e.touches[0].clientX);
+    },
+    { passive: true }
+  );
 
   track.addEventListener('touchend', () => {
     endDrag();
   });
 
+  track.addEventListener('touchcancel', () => {
+    endDrag();
+  });
+
+  // =========================
   // PC 마우스
+  // =========================
   track.addEventListener('mousedown', e => {
     startDrag(e.clientX);
   });
@@ -1229,16 +1312,22 @@ window.addEventListener('load', () => {
     endDrag();
   });
 
-  // 복제본까지 자연스럽게 이동한 뒤
-  // 애니메이션이 끝난 순간 같은 모양의 원본으로 교체
+  // =========================
+  // 무한루프 경계 처리
+  // =========================
   track.addEventListener('transitionend', () => {
-    if (index === 0) {
-      index = N;
+
+    // 실제 1번에서 오른쪽으로 넘겨
+    // 앞쪽 17번 복제본에 도착
+    if (index === 1) {
+      index = N + 1;
       position(false);
     }
 
-    else if (index === N + 1) {
-      index = 1;
+    // 실제 17번에서 왼쪽으로 넘겨
+    // 뒤쪽 1번 복제본에 도착
+    else if (index === N + 2) {
+      index = 2;
       position(false);
     }
 
