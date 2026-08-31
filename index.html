@@ -1129,46 +1129,71 @@ window.addEventListener('load', () => {
   - (track.clientWidth - slides[1].clientWidth) / 2;
     requestAnimationFrame(() => { track.style.scrollBehavior = ''; });
 
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !jumping) {
-          if (entry.target === lastClone) {
-            dots.forEach(d => d.classList.remove('active'));
-            dots[N - 1].classList.add('active');
-            jumping = true;
-            setTimeout(() => {
-              track.style.scrollBehavior = 'auto';
-              track.scrollLeft = slides[N].offsetLeft
-  - (track.clientWidth - slides[N].clientWidth) / 2;
-              requestAnimationFrame(() => {
-                track.style.scrollBehavior = '';
-                jumping = false;
-              });
-            }, 350);
-          } else if (entry.target === firstClone) {
-            dots.forEach(d => d.classList.remove('active'));
-            dots[0].classList.add('active');
-            jumping = true;
-            setTimeout(() => {
-              track.style.scrollBehavior = 'auto';
-              track.scrollLeft = slides[1].offsetLeft
-  - (track.clientWidth - slides[1].clientWidth) / 2;
-              requestAnimationFrame(() => {
-                track.style.scrollBehavior = '';
-                jumping = false;
-              });
-            }, 350);
-          } else {
-            const idx = slides.indexOf(entry.target);
-            const realIdx = idx - 1;
-            dots.forEach(d => d.classList.remove('active'));
-            if (dots[realIdx]) dots[realIdx].classList.add('active');
-          }
-        }
-      });
-    }, { root: track, threshold: 0.6 });
+    let scrollTimer;
 
-    slides.forEach(s => io.observe(s));
+function getCenterPosition(slide) {
+  return slide.offsetLeft
+    - (track.clientWidth - slide.clientWidth) / 2;
+}
+
+function updateGallery() {
+  const trackCenter = track.scrollLeft + track.clientWidth / 2;
+
+  let closestIndex = 0;
+  let closestDistance = Infinity;
+
+  slides.forEach((slide, index) => {
+    const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
+    const distance = Math.abs(trackCenter - slideCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  if (closestIndex === 0) {
+    track.style.scrollSnapType = 'none';
+    track.style.scrollBehavior = 'auto';
+    track.scrollLeft = getCenterPosition(slides[N]);
+
+    requestAnimationFrame(() => {
+      track.style.scrollSnapType = '';
+      track.style.scrollBehavior = 'auto';
+    });
+
+    closestIndex = N;
+  }
+
+  else if (closestIndex === N + 1) {
+    track.style.scrollSnapType = 'none';
+    track.style.scrollBehavior = 'auto';
+    track.scrollLeft = getCenterPosition(slides[1]);
+
+    requestAnimationFrame(() => {
+      track.style.scrollSnapType = '';
+      track.style.scrollBehavior = 'auto';
+    });
+
+    closestIndex = 1;
+  }
+
+  const realIndex = closestIndex - 1;
+
+  dots.forEach(d => d.classList.remove('active'));
+
+  if (dots[realIndex]) {
+    dots[realIndex].classList.add('active');
+  }
+}
+
+track.addEventListener('scroll', () => {
+  clearTimeout(scrollTimer);
+
+  scrollTimer = setTimeout(() => {
+    updateGallery();
+  }, 120);
+}, { passive: true });
   })();
 
   // 3) 계좌 아코디언 - 눌렀을 때 아래로 부드럽게 펼쳐짐
