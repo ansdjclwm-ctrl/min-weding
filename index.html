@@ -579,6 +579,71 @@ font-size:15px;
   cursor:default;
 }
 
+.delete-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:2147483647;
+  padding:24px;
+}
+
+.delete-modal[hidden]{
+  display:none;
+}
+
+.delete-modal-card{
+  width:100%;
+  max-width:320px;
+  background:#fff;
+  padding:24px 20px 18px;
+  border-radius:10px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.18);
+}
+
+.delete-modal-title{
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:14px;
+  text-align:center;
+}
+
+.delete-password{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #ddd;
+  border-radius:6px;
+  font-family:'Pretendard', sans-serif;
+  font-size:13px;
+  outline:none;
+}
+
+.delete-password:focus{
+  border-color:#999;
+}
+
+.delete-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:16px;
+}
+
+.delete-modal-actions button{
+  border:0;
+  background:none;
+  font-family:'Pretendard', sans-serif;
+  font-size:12px;
+  cursor:pointer;
+  padding:6px 4px;
+}
+
+#deleteConfirm{
+  font-weight:700;
+}
+
   /* ===================== LOCATION ===================== */
   .location{text-align:center;}
   .venue{font-size:16px; font-weight:800; margin-bottom:6px;}
@@ -1577,6 +1642,68 @@ setTimeout(() => {
   deletePassword.focus();
 }, 0);
 }
+
+function closeDeleteModal() {
+  deleteModal.hidden = true;
+  deletePassword.value = '';
+  deleteTargetId = null;
+}
+
+deleteCancel.addEventListener('click', () => {
+  closeDeleteModal();
+});
+
+deleteModal.addEventListener('click', (event) => {
+  if (event.target === deleteModal) {
+    closeDeleteModal();
+  }
+});
+
+deletePassword.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    deleteConfirm.click();
+  }
+});
+
+deleteConfirm.addEventListener('click', async () => {
+  const password = deletePassword.value;
+
+  if (!password || !deleteTargetId) {
+    return;
+  }
+
+  deleteConfirm.disabled = true;
+
+  try {
+    await signInWithEmailAndPassword(adminAuth, ADMIN_EMAIL, password);
+
+    await deleteDoc(
+      doc(adminDb, 'guestbook', deleteTargetId)
+    );
+
+    closeDeleteModal();
+
+  } catch (error) {
+    console.error('관리자 메시지 삭제 실패:', error);
+
+    if (
+      error.code === 'auth/invalid-credential' ||
+      error.code === 'auth/wrong-password'
+    ) {
+      alert('비밀번호가 맞지 않습니다.');
+      deletePassword.select();
+    } else {
+      alert('메시지 삭제에 실패했습니다.');
+    }
+
+  } finally {
+    try {
+      await signOut(adminAuth);
+    } catch (error) {}
+
+    deleteConfirm.disabled = false;
+  }
+});
 
 function makeMessage(data, docId) {
   const item = document.createElement('div');
