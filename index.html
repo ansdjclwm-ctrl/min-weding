@@ -562,6 +562,23 @@ font-size:15px;
   opacity:0.25;
   cursor:default;
 }
+
+.congrats-delete{
+  border:0;
+  background:none;
+  padding:4px 0;
+  margin-top:8px;
+  font-family:'Pretendard', sans-serif;
+  font-size:11px;
+  color:#aaa;
+  cursor:pointer;
+}
+
+.congrats-delete:disabled{
+  opacity:0.35;
+  cursor:default;
+}
+
   /* ===================== LOCATION ===================== */
   .location{text-align:center;}
   .venue{font-size:16px; font-weight:800; margin-bottom:6px;}
@@ -1552,6 +1569,43 @@ async function handleDelete(docId, ownerUid) {
     return;
   }
 
+deleteTargetId = docId;
+deletePassword.value = '';
+deleteModal.hidden = false;
+
+setTimeout(() => {
+  deletePassword.focus();
+}, 0);
+}
+
+function makeMessage(data, docId) {
+  const item = document.createElement('div');
+  item.className = 'congrats-item';
+
+  const name = document.createElement('p');
+  name.className = 'congrats-item-name';
+  name.textContent = data.name || '익명';
+
+  const message = document.createElement('p');
+  message.className = 'congrats-item-msg';
+  message.textContent = data.message || '';
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'congrats-delete';
+  deleteBtn.textContent = '삭제';
+
+  deleteBtn.addEventListener('click', () => {
+    handleDelete(docId, data.ownerUid);
+  });
+
+  item.appendChild(name);
+  item.appendChild(message);
+  item.appendChild(deleteBtn);
+
+  return item;
+}
+
   const pagination = document.getElementById('congratsPagination');
 
 const PAGE_SIZE = 5;
@@ -1566,7 +1620,7 @@ function renderMessages() {
   const pageMessages = allMessages.slice(start, end);
 
   pageMessages.forEach((data) => {
-    list.appendChild(makeMessage(data));
+    list.appendChild(makeMessage(data, data.docId));
   });
 
   renderPagination();
