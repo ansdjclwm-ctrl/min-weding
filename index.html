@@ -1487,16 +1487,25 @@ if (musicBtn && hero) {
 
   import {
     getFirestore,
-    collection,
-    addDoc,
-    query,
-    orderBy,
-    onSnapshot,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp,
+doc,
+deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDbX3IZzWin5leXGX8P1R580m45Qrn4ttY",
+    apiKey: "AIzaSyCXJ5zmgnw5J9xN83cr6oTLT6tzVtS03iI",
     authDomain: "min-wedding-f7f9e.firebaseapp.com",
     projectId: "min-wedding-f7f9e",
     storageBucket: "min-wedding-f7f9e.firebasestorage.app",
@@ -1507,28 +1516,40 @@ if (musicBtn && hero) {
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
+const adminApp = initializeApp(firebaseConfig, 'adminApp');
+const adminDb = getFirestore(adminApp);
+const adminAuth = getAuth(adminApp);
+  await signInAnonymously(auth);
+
+  const ADMIN_EMAIL = 'ansdjclwm@gmail.com';
 
   const nameInput = document.getElementById('congratsName');
   const msgInput = document.getElementById('congratsMsg');
   const submitBtn = document.getElementById('congratsSubmit');
   const list = document.getElementById('congratsList');
+let deleteTargetId = null;
 
-  function makeMessage(data) {
-    const item = document.createElement('div');
-    item.className = 'congrats-item';
+const deleteModal = document.getElementById('deleteModal');
+const deletePassword = document.getElementById('deletePassword');
+const deleteCancel = document.getElementById('deleteCancel');
+const deleteConfirm = document.getElementById('deleteConfirm');
 
-    const name = document.createElement('p');
-    name.className = 'congrats-item-name';
-    name.textContent = data.name || '익명';
 
-    const message = document.createElement('p');
-    message.className = 'congrats-item-msg';
-    message.textContent = data.message || '';
+async function handleDelete(docId, ownerUid) {
+  if (auth.currentUser && ownerUid === auth.currentUser.uid) {
+    const ok = confirm('작성하신 메시지를 삭제하시겠습니까?');
 
-    item.appendChild(name);
-    item.appendChild(message);
+    if (!ok) return;
 
-    return item;
+    try {
+      await deleteDoc(doc(db, 'guestbook', docId));
+    } catch (error) {
+      console.error('작성자 메시지 삭제 실패:', error);
+      alert('메시지 삭제에 실패했습니다.');
+    }
+
+    return;
   }
 
   const pagination = document.getElementById('congratsPagination');
@@ -1602,7 +1623,7 @@ onSnapshot(messagesQuery, (snapshot) => {
   allMessages = [];
 
   snapshot.forEach((doc) => {
-    allMessages.push(doc.data());
+    allMessages.push({ ...doc.data(), docId: doc.id });
   });
 
   const totalPages = Math.max(1, Math.ceil(allMessages.length / PAGE_SIZE));
@@ -1625,6 +1646,7 @@ onSnapshot(messagesQuery, (snapshot) => {
       msgInput.focus();
       return;
     }
+    
 
     if (name.length > 20 || message.length > 500) {
       alert('이름은 20자, 메시지는 500자 이내로 작성해주세요.');
@@ -1634,9 +1656,11 @@ onSnapshot(messagesQuery, (snapshot) => {
     submitBtn.disabled = true;
 
     try {
+
       await addDoc(collection(db, 'guestbook'), {
         name: name,
         message: message,
+        ownerUid: auth.currentUser.uid,
         createdAt: serverTimestamp()
       });
 
@@ -1652,5 +1676,23 @@ onSnapshot(messagesQuery, (snapshot) => {
     }
   });
 </script>
+<div class="delete-modal" id="deleteModal" hidden>
+  <div class="delete-modal-card">
+    <p class="delete-modal-title">관리자 비밀번호</p>
+
+    <input
+      type="password"
+      id="deletePassword"
+      class="delete-password"
+      placeholder="비밀번호를 입력해주세요"
+      autocomplete="current-password"
+    >
+
+    <div class="delete-modal-actions">
+      <button type="button" id="deleteCancel">취소</button>
+      <button type="button" id="deleteConfirm">삭제</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
