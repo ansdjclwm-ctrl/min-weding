@@ -1273,7 +1273,7 @@ window.addEventListener('load', () => {
       extra;
 
     track.style.transition = animate
-      ? 'transform 0.38s cubic-bezier(.22,.61,.36,1)'
+      ? 'transform 0.25s cubic-bezier(.22,.61,.36,1)'
       : 'none';
 
     track.style.transform =
@@ -1300,16 +1300,22 @@ window.addEventListener('load', () => {
   });
 
   function startDrag(clientX) {
-    // 사진이 자리로 이동 중이면
-    // 다음 드래그가 끼어들지 못하게 함
-    animating = false;
-
-    dragging = true;
-    startX = clientX;
-    moveX = 0;
-
-    track.style.transition = 'none';
+  // 이동 중 다시 스와이프했을 때 무한루프 위치 먼저 정리
+  if (index === 1) {
+    index = N + 1;
+    position(false);
+  } else if (index === N + 2) {
+    index = 2;
+    position(false);
   }
+
+  animating = false;
+  dragging = true;
+  startX = clientX;
+  moveX = 0;
+
+  track.style.transition = 'none';
+}
 
   function drag(clientX) {
     if (!dragging) return;
