@@ -1302,7 +1302,7 @@ window.addEventListener('load', () => {
   function startDrag(clientX) {
     // 사진이 자리로 이동 중이면
     // 다음 드래그가 끼어들지 못하게 함
-    if (animating) return;
+    animating = false;
 
     dragging = true;
     startX = clientX;
@@ -1352,10 +1352,6 @@ window.addEventListener('load', () => {
 
     position(true);
     updateDots();
-    
-    setTimeout(() => {
-  animating = false;
-}, 450);
   }
 
   // =========================
